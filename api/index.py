@@ -1,13 +1,36 @@
 from flask import Flask, request, jsonify, render_template
 import sys
 import os
+from pathlib import Path
 
-# Add parent directory to path so we can import from web
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from web.app import app
+app = Flask(__name__)
 
-# This is required for Vercel
-app.template_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'web', 'templates'))
+# Set template folder - make it absolute from the api directory
+template_dir = str(Path(__file__).resolve().parent.parent / 'web' / 'templates')
+app.template_folder = template_dir
 
-# Required for Vercel serverless function
-handler = app
+@app.route('/')
+def home():
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analyze_company', methods=['POST'])
+def analyze_company():
+    try:
+        data = request.json
+        if not data or 'url' not in data:
+            return jsonify({'error': 'URL is required'}), 400
+            
+        # For now, just return a test response
+        return jsonify({
+            'status': 'success',
+            'message': 'API endpoint working',
+            'received_url': data['url']
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Required for Vercel
+app = app.wsgi_app
